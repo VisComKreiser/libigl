@@ -7,37 +7,6 @@
 
 #include <iostream>
 
-/*
-def triangleAreaCCW_2D(p0, p1, p2) :
-    # half the area of a planar parallelogram
-    # |v x w| = |v| * |w| * |sin(theta)| with theta = angle between v and w and v = vector(p0, p1) and w = vector(p0, p2)
-    # returned area is signed
-    v0 = p1 - p0
-    v1 = p2 - p0
-    # simplified cross product in 2D
-    return 0.5 * (v0[:, 0] * v1[:, 1] - v1[:, 0] * v0[:, 1])
-
-def triangleArea_3D(p0, p1, p2) :
-    #consider heron's formula with area of triangle if alle edge lengths are known
-    # S = sqrt(s * (s - a) * (s - b) * (s - c)) with s = 0.5 * (a + b + c) and a, b, c = edge lengths
-    v0 = p1 - p0
-    v1 = p2 - p0
-    return 0.5 * torch.cross(v0, v1).norm(dim = 1)
-
-def triangleAngles(p0, p1, p2, acos_clamp_value = 1.0 - 1e-5) :
-    v01 = F.normalize(p1 - p0)
-    v02 = F.normalize(p2 - p0)
-    v12 = F.normalize(p2 - p1)
-
-    # calculate angles at all vertices of the triangle using the cosine - similarity law
-    # pi minus the two first angles is the third one
-    phi0 = torch.acos(torch.clamp(tensorDot(v01, v02), -acos_clamp_value, acos_clamp_value)).view(-1, 1)
-    phi1 = torch.acos(torch.clamp(tensorDot(v01, v12), -acos_clamp_value, acos_clamp_value)).view(-1, 1)
-    phi2 = (math.pi - phi0 - phi1)
-
-return torch.cat([phi0, phi1, phi2], dim = 1)
-*/
-
 template <typename T>
 T clamp(T value, T min_value, T max_value)
 {
