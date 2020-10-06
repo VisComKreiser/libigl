@@ -26,6 +26,7 @@ else()
 endif()
 
 ### Choose which chapters to compile
+option(TUTORIALS_CHAPTER0 "Compile chapter 0" ON)
 option(TUTORIALS_CHAPTER1 "Compile chapter 1" ON)
 option(TUTORIALS_CHAPTER2 "Compile chapter 2" ON)
 option(TUTORIALS_CHAPTER3 "Compile chapter 3" ON)
@@ -51,6 +52,13 @@ if(NOT (LIBIGL_WITH_OPENGL AND LIBIGL_WITH_OPENGL_GLFW) )
   return()
 endif()
 
+# Chapter 0
+if(TUTORIALS_CHAPTER0)
+  add_subdirectory("001_MeshAnalysis")
+  add_subdirectory("002_ParameterCalculation")
+endif()
+
+# Chapter 1
 if(TUTORIALS_CHAPTER1)
   add_subdirectory("102_DrawMesh")
   add_subdirectory("103_Events")
