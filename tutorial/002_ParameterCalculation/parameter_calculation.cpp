@@ -3,6 +3,9 @@
 #include <igl/readSTL.h>
 #include <igl/PI.h>
 
+// ToDo: is this really necessary?
+#include <Eigen/Geometry>
+
 #include "tutorial_shared_path.h"
 
 #include <iostream>
