@@ -8,6 +8,7 @@
 #include <igl/collapse_edge.h>
 #include <igl/edge_flaps.h>
 #include <igl/decimate.h>
+#include <igl/remove_unreferenced.h>
 #include <igl/shortest_edge_and_midpoint.h>
 #include <igl/parallel_for.h>
 #include <igl/opengl/glfw/Viewer.h>
@@ -17,9 +18,10 @@
 #include <string>
 #include <filesystem>
 
-Eigen::MatrixXd V;
-Eigen::MatrixXi F;
+Eigen::MatrixXd V, NV;
+Eigen::MatrixXi F, NF;
 Eigen::MatrixXd V_uv;
+Eigen::VectorXi I;
 
 bool key_down(igl::opengl::glfw::Viewer& viewer, unsigned char key, int modifier)
 {
@@ -114,6 +116,11 @@ int main(int argc, char* argv[])
             continue;
         }
 
+        // cleanup input
+        igl::remove_unreferenced(V, F, NV, NF, I);
+        V = NV;
+        F = NF;
+
         // get boundary loops
         std::vector<std::vector<int>> b;
         igl::boundary_loop(F, b);
@@ -148,32 +155,15 @@ int main(int argc, char* argv[])
         // flatten
         igl::harmonic(V, F, bnd, bnd_uv, 1, V_uv);
 
-        // export
+        // pad
         auto V_uv_padded = V_uv;
         V_uv_padded.conservativeResize(V_uv_padded.rows(), V_uv_padded.cols() + 1);
         MatrixXd padding_data(V_uv_padded.rows(), 1);
         padding_data.setZero();
         V_uv_padded.col(V_uv_padded.cols() - 1) = padding_data;
+
+        // export
         igl::writeOBJ(std::string("D:/tmp/decimated/1000_faces/flattened/") + entry.path().filename().string(), V_uv_padded, F);
-        /*
-        // Scale the uv
-        V_uv *= 5;
-
-        // Plot the mesh
-        igl::opengl::glfw::Viewer viewer;
-        viewer.data().set_mesh(V, F);
-        viewer.data().set_uv(V_uv);
-        viewer.callback_key_down = &key_down;
-
-        // Disable wireframe
-        viewer.data().show_lines = false;
-
-        // Draw checkerboard texture
-        viewer.data().show_texture = true;
-
-        // Launch the viewer
-        viewer.launch();
-        */
     }
 
     // draw statistics
