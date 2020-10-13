@@ -103,9 +103,9 @@ int main(int argc, char* argv[])
     using namespace Eigen;
     namespace fs = std::filesystem;
 
-    const std::string data_path{ "D:/tmp/decimated/1000_faces/" };
+    const std::string data_path{ "E:/learning/data/progressive_parameterizations/D1/decimated_10000/" };
 
-    size_t too_many_boundaries{ 0 }, no_boundary{ 0 };
+    size_t too_many_boundaries{ 0 }, no_boundary{ 0 }, has_nan{ 0 };
     for (const auto& entry : fs::directory_iterator(data_path)) {
         std::cout << entry.path().filename().string() << std::endl;
 
@@ -162,13 +162,20 @@ int main(int argc, char* argv[])
         padding_data.setZero();
         V_uv_padded.col(V_uv_padded.cols() - 1) = padding_data;
 
+        if (V_uv_padded.hasNaN()) {
+            std::cout << "has NaN:             " << filename << std::endl;
+            has_nan++;
+            continue;
+        }
+
         // export
-        igl::writeOBJ(std::string("D:/tmp/decimated/1000_faces/flattened/") + entry.path().filename().string(), V_uv_padded, F);
+        igl::writeOBJ(std::string("E:/learning/data/progressive_parameterizations/D1/decimated_10000/flattened/") + entry.path().filename().string(), V_uv_padded, F);
     }
 
     // draw statistics
     std::cout << "meshes with too many open boundaries: " << too_many_boundaries << std::endl;
     std::cout << "meshes with no open boundary:         " << no_boundary << std::endl;
+    std::cout << "meshes with NaN:                      " << has_nan << std::endl;
 
     return 0;
 }
