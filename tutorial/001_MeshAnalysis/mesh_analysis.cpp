@@ -16,6 +16,7 @@
 #include "tutorial_shared_path.h"
 
 #include <string>
+#include <vector>
 #include <filesystem>
 
 Eigen::MatrixXd V, NV;
@@ -103,79 +104,88 @@ int main(int argc, char* argv[])
     using namespace Eigen;
     namespace fs = std::filesystem;
 
-    const std::string data_path{ "E:/learning/data/progressive_parameterizations/D1/decimated_10000/" };
+    const std::vector<std::string> data_set_ids = { "D1", "D2", "D3" };
+    const std::vector<size_t> decimations = { 1000, 5000, 10000 };
 
-    size_t too_many_boundaries{ 0 }, no_boundary{ 0 }, has_nan{ 0 };
-    for (const auto& entry : fs::directory_iterator(data_path)) {
-        std::cout << entry.path().filename().string() << std::endl;
+    for (const auto& data_set_id : data_set_ids)
+    {
+        for (const auto& decimation : decimations)
+        {
+            const std::string data_path{ "E:/learning/data/progressive_parameterizations/" + data_set_id + "/decimated_" + std::to_string(decimation) + "/" };
 
-        // load file
-        const auto& filename = entry.path().string();
-        if (!igl::readOBJ(filename, V, F)) {
-            std::cout << "could not read: " << filename << std::endl;
-            continue;
+            size_t too_many_boundaries{ 0 }, no_boundary{ 0 }, has_nan{ 0 };
+            for (const auto& entry : fs::directory_iterator(data_path)) {
+                std::cout << entry.path().filename().string() << std::endl;
+
+                // load file
+                const auto& filename = entry.path().string();
+                if (!igl::readOBJ(filename, V, F)) {
+                    std::cout << "could not read: " << filename << std::endl;
+                    continue;
+                }
+
+                // cleanup input
+                igl::remove_unreferenced(V, F, NV, NF, I);
+                V = NV;
+                F = NF;
+
+                // get boundary loops
+                std::vector<std::vector<int>> b;
+                igl::boundary_loop(F, b);
+
+                // check if only one loop exists
+                if (b.size() > 1) {
+                    std::cout << "too many boundaries: " << filename << std::endl;
+                    too_many_boundaries++;
+                    continue;
+                }
+                else if (b.empty()) {
+                    std::cout << "no boundaries:       " << filename << std::endl;
+                    no_boundary++;
+                    continue;
+                }
+
+                // collapse to target size
+                //collapse_mesh(V, F, V, F, 1000);
+
+                // write to Eigen object
+                const auto& b_tmp = b[0];
+                const auto num_bnd_verts = b_tmp.size();
+                VectorXi bnd;
+                bnd.resize(num_bnd_verts, 1);
+                for (size_t i{ 0 }; i < num_bnd_verts; ++i)
+                    bnd(i) = b_tmp[i];
+
+                // map boundary to circle
+                MatrixXd bnd_uv;
+                igl::map_vertices_to_circle(V, bnd, bnd_uv);
+
+                // flatten
+                igl::harmonic(V, F, bnd, bnd_uv, 1, V_uv);
+
+                // pad
+                auto V_uv_padded = V_uv;
+                V_uv_padded.conservativeResize(V_uv_padded.rows(), V_uv_padded.cols() + 1);
+                MatrixXd padding_data(V_uv_padded.rows(), 1);
+                padding_data.setZero();
+                V_uv_padded.col(V_uv_padded.cols() - 1) = padding_data;
+
+                if (V_uv_padded.hasNaN()) {
+                    std::cout << "has NaN:             " << filename << std::endl;
+                    has_nan++;
+                    continue;
+                }
+
+                // export
+                igl::writeOBJ(data_path + "flattened/" + entry.path().filename().string(), V_uv_padded, F);
+            }
+
+            // draw statistics
+            std::cout << "meshes with too many open boundaries: " << too_many_boundaries << std::endl;
+            std::cout << "meshes with no open boundary:         " << no_boundary << std::endl;
+            std::cout << "meshes with NaN:                      " << has_nan << std::endl;
         }
-
-        // cleanup input
-        igl::remove_unreferenced(V, F, NV, NF, I);
-        V = NV;
-        F = NF;
-
-        // get boundary loops
-        std::vector<std::vector<int>> b;
-        igl::boundary_loop(F, b);
-
-        // check if only one loop exists
-        if (b.size() > 1) {
-            std::cout << "too many boundaries: " << filename << std::endl;
-            too_many_boundaries++;
-            continue;
-        }
-        else if (b.empty()) {
-            std::cout << "no boundaries:       " << filename << std::endl;
-            no_boundary++;
-            continue;
-        }
-
-        // collapse to target size
-        //collapse_mesh(V, F, V, F, 1000);
-
-        // write to Eigen object
-        const auto& b_tmp = b[0];
-        const auto num_bnd_verts = b_tmp.size();
-        VectorXi bnd;
-        bnd.resize(num_bnd_verts, 1);
-        for (size_t i{ 0 }; i < num_bnd_verts; ++i)
-            bnd(i) = b_tmp[i];
-
-        // map boundary to circle
-        MatrixXd bnd_uv;
-        igl::map_vertices_to_circle(V, bnd, bnd_uv);
-
-        // flatten
-        igl::harmonic(V, F, bnd, bnd_uv, 1, V_uv);
-
-        // pad
-        auto V_uv_padded = V_uv;
-        V_uv_padded.conservativeResize(V_uv_padded.rows(), V_uv_padded.cols() + 1);
-        MatrixXd padding_data(V_uv_padded.rows(), 1);
-        padding_data.setZero();
-        V_uv_padded.col(V_uv_padded.cols() - 1) = padding_data;
-
-        if (V_uv_padded.hasNaN()) {
-            std::cout << "has NaN:             " << filename << std::endl;
-            has_nan++;
-            continue;
-        }
-
-        // export
-        igl::writeOBJ(std::string("E:/learning/data/progressive_parameterizations/D1/decimated_10000/flattened/") + entry.path().filename().string(), V_uv_padded, F);
     }
-
-    // draw statistics
-    std::cout << "meshes with too many open boundaries: " << too_many_boundaries << std::endl;
-    std::cout << "meshes with no open boundary:         " << no_boundary << std::endl;
-    std::cout << "meshes with NaN:                      " << has_nan << std::endl;
 
     return 0;
 }
