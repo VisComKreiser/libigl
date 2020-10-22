@@ -5,6 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(${PROJECT_NAME} mesh_analysis.cpp)
+add_executable(${PROJECT_NAME} unreferenced_vertex_removal.cpp)
 find_package(OpenMP REQUIRED)
 target_link_libraries(${PROJECT_NAME} igl::core igl::opengl igl::opengl_glfw OpenMP::OpenMP_CXX tutorials)

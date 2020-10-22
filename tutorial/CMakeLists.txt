@@ -56,6 +56,7 @@ endif()
 if(TUTORIALS_CHAPTER0)
   add_subdirectory("001_MeshAnalysis")
   add_subdirectory("002_ParameterCalculation")
+  add_subdirectory("003_UnreferencedVertexRemoval")
 endif()
 
 # Chapter 1

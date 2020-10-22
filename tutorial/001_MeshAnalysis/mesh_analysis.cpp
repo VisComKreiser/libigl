@@ -106,16 +106,27 @@ int main(int argc, char* argv[])
 
     const std::vector<std::string> data_set_ids = { "D1", "D2", "D3" };
     const std::vector<size_t> decimations = { 1000, 5000, 10000 };
+    const bool export_mesh{ true };
 
+    size_t too_many_boundaries{ 0 }, no_boundary{ 0 }, has_nan{ 0 }, unref_verts{ 0 };
     for (const auto& data_set_id : data_set_ids)
     {
         for (const auto& decimation : decimations)
         {
+            std::cout << data_set_id << '_' << decimation << std::endl;
             const std::string data_path{ "E:/learning/data/progressive_parameterizations/" + data_set_id + "/decimated_" + std::to_string(decimation) + "/" };
 
-            size_t too_many_boundaries{ 0 }, no_boundary{ 0 }, has_nan{ 0 };
+            /*std::vector<fs::directory_entry> dir_entries;
+            dir_entries.reserve(8096);
             for (const auto& entry : fs::directory_iterator(data_path)) {
-                std::cout << entry.path().filename().string() << std::endl;
+                dir_entries.push_back(entry);
+            }*/
+
+//#pragma omp parallel for
+            //for (int entry_idx{ 0 }; entry_idx < dir_entries.size(); ++entry_idx) {
+            for (const auto& entry :fs::directory_iterator(data_path)) {
+                //const auto& entry = dir_entries[entry_idx];
+                std::cout << data_set_id << '_' << decimation << ": " << entry.path().filename().string() << std::endl;
 
                 // load file
                 const auto& filename = entry.path().string();
@@ -126,6 +137,11 @@ int main(int argc, char* argv[])
 
                 // cleanup input
                 igl::remove_unreferenced(V, F, NV, NF, I);
+                if (V.rows() != NV.rows() || F.rows() != NF.rows()){
+                    std::cout << "unreferenced vertices: " << filename << std::endl;
+                    unref_verts++;
+                    continue;
+                }
                 V = NV;
                 F = NF;
 
@@ -145,7 +161,7 @@ int main(int argc, char* argv[])
                     continue;
                 }
 
-                // collapse to target size
+                // collapse to target size, only works with closed meshes
                 //collapse_mesh(V, F, V, F, 1000);
 
                 // write to Eigen object
@@ -177,15 +193,18 @@ int main(int argc, char* argv[])
                 }
 
                 // export
-                igl::writeOBJ(data_path + "flattened/" + entry.path().filename().string(), V_uv_padded, F);
+                if (export_mesh) {
+                    igl::writeOBJ(data_path + "flattened/" + entry.path().filename().string(), V_uv_padded, F);
+                }
             }
-
-            // draw statistics
-            std::cout << "meshes with too many open boundaries: " << too_many_boundaries << std::endl;
-            std::cout << "meshes with no open boundary:         " << no_boundary << std::endl;
-            std::cout << "meshes with NaN:                      " << has_nan << std::endl;
         }
     }
+
+    // print statistics
+    std::cout << "meshes with too many open boundaries: " << too_many_boundaries << std::endl;
+    std::cout << "meshes with no open boundary:         " << no_boundary << std::endl;
+    std::cout << "meshes with NaN:                      " << has_nan << std::endl;
+    std::cout << "meshes with unreferenced vertices:    " << has_nan << std::endl;
 
     return 0;
 }
