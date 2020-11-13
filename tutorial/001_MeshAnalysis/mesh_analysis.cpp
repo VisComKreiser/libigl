@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
 
     const std::vector<std::string> data_set_ids = { "D1", "D2", "D3" };
     const std::vector<size_t> decimations = { 1000, 5000, 10000 };
-    const bool export_mesh{ true };
+    const bool export_mesh{ false };
 
     size_t too_many_boundaries{ 0 }, no_boundary{ 0 }, has_nan{ 0 }, unref_verts{ 0 };
     for (const auto& data_set_id : data_set_ids)
@@ -125,6 +125,11 @@ int main(int argc, char* argv[])
 //#pragma omp parallel for
             //for (int entry_idx{ 0 }; entry_idx < dir_entries.size(); ++entry_idx) {
             for (const auto& entry :fs::directory_iterator(data_path)) {
+                // skip directory entries
+                if (entry.is_directory()) {
+                    continue;
+                }
+
                 //const auto& entry = dir_entries[entry_idx];
                 std::cout << data_set_id << '_' << decimation << ": " << entry.path().filename().string() << std::endl;
 
